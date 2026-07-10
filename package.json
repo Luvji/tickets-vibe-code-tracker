@@ -1,0 +1,166 @@
+{
+  "name": "tickets-vibe-coding",
+  "displayName": "Tickets - vibe coding issue tracker & management",
+  "description": "A text based Ticket tracking system. Custom color highlighter for project tickets and bugtracker files (.tickets, .tkt). Supports custom settings and provides prompts for AI agents.",
+  "version": "1.2.10",
+  "publisher": "Luvji",
+  "icon": "bug.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Luvji/tickets-vibe-code-tracker"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": ">=1.60.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "agent-tracker",
+        "aliases": ["Agent Tracker"],
+        "extensions": [".tickets", ".tkt"]
+      }
+    ],
+    "commands": [
+      {
+        "command": "tickets-vibe-coding.toggleFullLineHighlight",
+        "title": "Tickets: Toggle Full Line Highlighting"
+      },
+      {
+        "command": "tickets-vibe-coding.generateIds",
+        "title": "Tickets: Generate Missing Ticket IDs"
+      },
+      {
+        "command": "tickets-vibe-coding.initializeTemplate",
+        "title": "Tickets: Initialize Template"
+      }
+    ],
+    "configuration": {
+      "title": "Agent-Friendly Ticket Highlighter",
+      "properties": {
+        "agentTicketHighlighter.projectPrefix": {
+          "type": "string",
+          "default": "HLP",
+          "description": "Default project prefix for ticket numbering (e.g., HLP)."
+        },
+        "agentTicketHighlighter.idPadding": {
+          "type": "integer",
+          "default": 4,
+          "description": "Number of padding digits for ticket IDs (e.g., 4 for 0001)."
+        },
+        "agentTicketHighlighter.autoGenerateIds": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically generate and append unique ticket IDs when typing new tickets."
+        },
+        "agentTicketHighlighter.highlightFullLine": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, highlights the entire line with the status color instead of just the prefix."
+        },
+        "agentTicketHighlighter.colors.completed": {
+          "type": "string",
+          "format": "color-hex",
+          "default": "#10b981",
+          "description": "Text color for Completed prefix ($-)"
+        },
+        "agentTicketHighlighter.colors.working": {
+          "type": "string",
+          "format": "color-hex",
+          "default": "#f59e0b",
+          "description": "Text color for Working prefix (@-)"
+        },
+        "agentTicketHighlighter.colors.ready": {
+          "type": "string",
+          "format": "color-hex",
+          "default": "#06b6d4",
+          "description": "Text color for Ready to test prefix (#-)"
+        },
+        "agentTicketHighlighter.colors.planned": {
+          "type": "string",
+          "format": "color-hex",
+          "default": "#64748b",
+          "description": "Text color for Planned prefix (*-)"
+        },
+        "agentTicketHighlighter.colors.cancelled": {
+          "type": "string",
+          "format": "color-hex",
+          "default": "#475569",
+          "description": "Text color for Cancelled prefix (!-)"
+        },
+        "agentTicketHighlighter.colors.failed": {
+          "type": "string",
+          "format": "color-hex",
+          "default": "#ef4444",
+          "description": "Text color for Failed prefix (^-)"
+        },
+        "agentTicketHighlighter.colors.epic": {
+          "type": "string",
+          "format": "color-hex",
+          "default": "#8b5cf6",
+          "description": "Text color for Epic / Undecided prefix (~-)"
+        },
+        "agentTicketHighlighter.customRules": {
+          "type": "array",
+          "default": [],
+          "description": "Add your own custom highlighting prefixes and tag badges!",
+          "items": {
+            "type": "object",
+            "required": ["color"],
+            "properties": {
+              "prefix": {
+                "type": "string",
+                "description": "Start-of-line custom trigger prefix (e.g. '?-' or 'Q-')"
+              },
+              "tag": {
+                "type": "string",
+                "description": "Inline tag to match. (e.g. 'URGENT' will match '[URGENT]')"
+              },
+              "regex": {
+                "type": "string",
+                "description": "Regex pattern for custom matches"
+              },
+              "color": {
+                "type": "string",
+                "format": "color-hex",
+                "description": "Hex code for the text color"
+              },
+              "bold": {
+                "type": "boolean",
+                "default": true,
+                "description": "Apply bold font styling"
+              },
+              "italic": {
+                "type": "boolean",
+                "default": false,
+                "description": "Apply italic font styling"
+              },
+              "strikethrough": {
+                "type": "boolean",
+                "default": false,
+                "description": "Apply strikethrough text decoration"
+              },
+              "backgroundColor": {
+                "type": "string",
+                "format": "color-hex",
+                "description": "Optional custom background hex color"
+              },
+              "border": {
+                "type": "string",
+                "description": "Optional custom CSS border style (e.g. '1px solid #ff0000')"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

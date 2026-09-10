@@ -10,6 +10,8 @@ Module._load = function mockVscode(request, parent, isMain) {
 
 const { shouldRestoreLinkPlaceholder, selectionsContainLine } = require('./extension').__test;
 const {
+  formatTrackerTitle,
+  ensureTrackerHeader,
   getNotificationSidecarPath,
   buildTicketSummary,
   findHierarchyNotifications,
@@ -17,6 +19,36 @@ const {
   ensureNotificationMarker,
   ensureInfoMarker
 } = require('./ticketFlow');
+
+assert.equal(
+  formatTrackerTitle('customer-portal'),
+  'CUSTOMER PORTAL - DEVELOPMENT TRACKER',
+  'tracker titles must be derived from a readable project name'
+);
+
+const generatedHeader = ensureTrackerHeader(
+  '*- [EPIC][APP-0001] Planned Delivery\n',
+  { prefix: 'APP', projectName: 'customer-portal' }
+);
+assert.match(
+  generatedHeader.text,
+  /^\[HELP\] Hover here for ticket rules and conventions\.\n\[NOTIFICATION\] No active ticket notifications\.\n\[INFO\] Hover here for the current ticket summary\.\n\[PREFIX: APP\]\n={80}\nCUSTOMER PORTAL - DEVELOPMENT TRACKER\n={80}\n\n\*- \[EPIC\]/,
+  'every tracker must receive the complete standard project-aware header'
+);
+
+const customizedHeader = ensureTrackerHeader(
+  '[INFO] moved\n[PREFIX: OWN]\n' +
+  '='.repeat(80) + '\nRelease Readiness Board\n' + '='.repeat(80) + '\n' +
+  '[*NOTIFICATION] Review this\n[HELP] moved\n\n~- [EPIC][OWN-0001] Review\n',
+  { prefix: 'IGNORED', projectName: 'different-project' }
+);
+assert.match(
+  customizedHeader.text,
+  /^\[HELP\].*\n\[\*NOTIFICATION\].*\n\[INFO\].*\n\[PREFIX: OWN\]\n={80}\nRelease Readiness Board\n={80}\n\n~- \[EPIC\]/,
+  'normalization must reorder protected markers while preserving user title and prefix changes'
+);
+assert.equal((customizedHeader.text.match(/Release Readiness Board/g) || []).length, 1,
+  'a preserved custom tracker title must not be duplicated');
 
 assert.equal(
   getNotificationSidecarPath('/workspace/tasks/development.tkt', '/workspace'),
@@ -146,5 +178,9 @@ assert.match(aiPrompt, /Never read or write another tracker's notification recor
   'AI guidance must isolate notification history by ticket file');
 assert.match(aiPrompt, /Store newly created ticket-specific evidence images[\s\S]*under `\.tickets\/evidence\/<ticket-id>\/`/i,
   'AI guidance must route ticket support artifacts into the dedicated support folder');
+assert.match(aiPrompt, /Keep the standard top block in every ticket tracker[\s\S]*Preserve a title the user has changed/i,
+  'AI guidance must maintain a project-aware standard header without overwriting user titles');
+assert.match(aiPrompt, /When no substantial work is currently underway[\s\S]*do not repeat the reminder in every response/i,
+  'AI guidance must surface planned work only at contextually appropriate moments');
 
 console.log('All ticket flow regression tests passed.');

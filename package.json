@@ -2,7 +2,7 @@
   "name": "tickets-vibe-coding",
   "displayName": "Tickets - vibe coding issue tracker & management",
   "description": "A text based Ticket tracking system. Custom color highlighter for project tickets and bugtracker files (.tickets, .tkt). Supports custom settings and provides prompts for AI agents.",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "publisher": "Luvji",
   "icon": "bug.png",
   "repository": {

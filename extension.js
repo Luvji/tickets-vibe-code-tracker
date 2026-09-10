@@ -1,12 +1,12 @@
 const vscode = require('vscode');
 const {
   clampInteger,
+  formatTrackerTitle,
+  ensureTrackerHeader,
   getNotificationSidecarPath,
   buildTicketSummary,
   findHierarchyNotifications,
   normalizeTicketDocument,
-  ensureNotificationMarker,
-  ensureInfoMarker
 } = require('./ticketFlow');
 
 function createProjectPrefix(projectName) {
@@ -39,13 +39,6 @@ function inferProjectName(document) {
 
   const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
   if (workspaceFolder) {
-    const workspacePath = workspaceFolder.uri.path.replace(/\/$/, '');
-    const documentPath = document.uri.path;
-    const relativePath = documentPath.startsWith(`${workspacePath}/`)
-      ? documentPath.slice(workspacePath.length + 1)
-      : '';
-    const pathParts = relativePath.split('/').filter(Boolean);
-    if (pathParts.length > 1) return pathParts[0];
     if (workspaceFolder.name) return workspaceFolder.name;
   }
 
@@ -165,6 +158,7 @@ function activate(context) {
       descriptionIndentation: clampInteger(config.get('descriptionIndentation'), 2, 0),
       numberingEnabled: config.get('enableTicketNumbering') !== false,
       prefix: getProjectPrefix(document),
+      projectName: inferProjectName(document),
       padding: config.get('idPadding') || 4,
       nextId: getNextWorkspaceIdNumber(document, getProjectPrefix(document))
     };
@@ -248,19 +242,22 @@ function activate(context) {
     const document = editor.document;
     const options = getFlowOptions(document);
     const normalized = normalizeTicketDocument(document.getText(), options);
-    const notifications = normalized.notifications;
-    const withMarker = ensureNotificationMarker(normalized.text, notifications.length > 0);
-    const withInfo = ensureInfoMarker(withMarker.text);
+    const withHeader = ensureTrackerHeader(normalized.text, {
+      prefix: options.prefix,
+      projectName: options.projectName,
+      hasStructuralNotifications: normalized.notifications.length > 0
+    });
+    const notifications = findHierarchyNotifications(withHeader.text, options);
     notificationState.set(document.uri.toString(), notifications);
 
-    if (!withInfo.changed && !withMarker.changed && !normalized.changed) {
+    if (!withHeader.changed && !normalized.changed) {
       ensureNotificationInfrastructure(document, notifications);
       return;
     }
 
     const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length));
     const edit = new vscode.WorkspaceEdit();
-    edit.replace(document.uri, fullRange, withInfo.text);
+    edit.replace(document.uri, fullRange, withHeader.text);
     isEditing = true;
     vscode.workspace.applyEdit(edit).then(() => {
       isEditing = false;
@@ -1164,7 +1161,8 @@ function activate(context) {
     const ticketIndentation = clampInteger(config.get('ticketIndentation'), 4, 1);
     const descriptionIndentation = clampInteger(config.get('descriptionIndentation'), 2, 0);
     const id = number => numberingEnabled ? formatId(prefix, number, padding) : '';
-    const prefixHeader = numberingEnabled ? `[PREFIX: ${prefix}]\n` : '';
+    const prefixHeader = `[PREFIX: ${prefix}]`;
+    const trackerTitle = formatTrackerTitle(inferProjectName(document));
     const ticketIndent = ' '.repeat(ticketIndentation);
     const descriptionIndent = ' '.repeat(descriptionIndentation);
     const ticketDescriptionIndent = ' '.repeat(ticketIndentation + descriptionIndentation);
@@ -1174,7 +1172,7 @@ function activate(context) {
 [INFO] Hover here for the current ticket summary.
 ${prefixHeader}
 ================================================================================
-TICKETS - BUG & SUGGESTION TRACKER
+${trackerTitle}
 ================================================================================
 This file defines the project task lists. 
 ${numberingEnabled ? `To configure a custom project prefix, edit the [PREFIX: ${prefix}] tag above.` : 'Ticket numbering is disabled. Enable it in settings if this project needs ticket IDs.'}
@@ -1425,6 +1423,7 @@ ${ticketDescriptionIndent}[DESC] *Database is SQLite. See schema details in data
       if (start !== -1 && position.character >= start && position.character <= start + 6) {
         const help = new vscode.MarkdownString();
         help.appendMarkdown('### Tickets rules and conventions\n\n');
+        help.appendMarkdown('**Header:** every tracker starts with `[HELP]`, `[NOTIFICATION]`, `[INFO]`, `[PREFIX]`, and a framed project-specific title. The extension creates a workspace-name fallback; AI may refine it, and user-edited titles are preserved.\n\n');
         help.appendMarkdown('**Hierarchy:** every ticket belongs beneath an `[EPIC]`. Epic descriptions follow the epic immediately, and the blank boundary follows the final epic `[DESC]`. Direct epic children use the configured ticket indentation; deeper indentation or `--` marks nested work.\n\n');
         help.appendMarkdown('**Titles:** use concise, accurate, professional one-line summaries. Keep relevant request details in the owning epic or ticket `[DESC]`.\n\n');
         help.appendMarkdown('**Statuses:** `$-` completed · `@-` working · `#-` ready to test · `*-` planned · `!-` cancelled · `^-` failed · `~-` epic/undecided\n\n');
@@ -1432,6 +1431,7 @@ ${ticketDescriptionIndent}[DESC] *Database is SQLite. See schema details in data
         help.appendMarkdown('**Notifications:** `[*NOTIFICATION]` means hierarchy or semantic placement needs review. Each tracker uses a unique record below `.tickets/notifications/`, so notices never leak between ticket files.\n\n');
         help.appendMarkdown('**Support files:** store new ticket-specific evidence, links, attachments, and future artifacts under `.tickets/` instead of the project root. Existing project files may stay in their proper locations.\n\n');
         help.appendMarkdown('**Completion review:** project inactivity never completes a `#-` ticket. During later active work, notify first; only a subsequent fresh verification of stability may promote it to `$-`.\n\n');
+        help.appendMarkdown('**Planned work:** when substantial active work has naturally paused, AI may briefly offer relevant `*-` or `~-` work. It should not repeat this during every response.\n\n');
         help.appendMarkdown('**Information:** hover `[INFO]` for live epic totals, ticket status counts, and detailed tickets grouped by epic.\n\n');
         help.appendMarkdown('**Test links:** a `[TEST]` needs a child `[LINK]`. Green references exist, red references do not, and orange means unresolved (`{nil}`).\n\n');
         help.appendMarkdown('Descriptions and end-of-line comments may contain clickable workspace paths and URLs.');

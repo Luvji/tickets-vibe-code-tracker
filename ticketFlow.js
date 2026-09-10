@@ -14,11 +14,81 @@ const STATUS_LABELS = {
   '~': 'Undecided',
   '?': 'Unspecified'
 };
+const HEADER_SEPARATOR = '='.repeat(80);
+const HELP_MARKER = '[HELP] Hover here for ticket rules and conventions.';
+const INFO_MARKER = '[INFO] Hover here for the current ticket summary.';
 
 function clampInteger(value, fallback, minimum = 0, maximum = 16) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(maximum, Math.max(minimum, parsed));
+}
+
+function formatTrackerTitle(projectName) {
+  const readableName = String(projectName || 'Project')
+    .replace(/\.(?:tickets|tkt)$/i, '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || 'Project';
+  return `${readableName.toUpperCase()} - DEVELOPMENT TRACKER`;
+}
+
+function findExistingHeaderFrame(lines) {
+  const limit = Math.min(lines.length - 2, 40);
+  for (let index = 0; index < limit; index++) {
+    if (!/^={20,}\s*$/.test(lines[index])) continue;
+    if (!lines[index + 1].trim() || !/^={20,}\s*$/.test(lines[index + 2])) continue;
+    return {
+      indices: new Set([index, index + 1, index + 2]),
+      title: lines[index + 1].trim()
+    };
+  }
+  return null;
+}
+
+function ensureTrackerHeader(text, options = {}) {
+  const newline = text.includes('\r\n') ? '\r\n' : '\n';
+  const hadFinalNewline = /\r?\n$/.test(text);
+  const lines = text.split(/\r?\n/);
+  if (hadFinalNewline) lines.pop();
+
+  const existingFrame = findExistingHeaderFrame(lines);
+  const existingPrefix = lines
+    .map(line => line.match(/^\s*\[PREFIX:\s*([A-Za-z0-9_-]+)\]\s*$/i))
+    .find(Boolean);
+  const activeAlready = lines.some(line => /^\s*\[\*NOTIFICATION\]/i.test(line));
+  const active = options.hasStructuralNotifications || activeAlready;
+  const prefix = String(existingPrefix ? existingPrefix[1] : options.prefix || 'TKT').toUpperCase();
+  const title = existingFrame ? existingFrame.title : formatTrackerTitle(options.projectName);
+
+  const body = lines.filter((line, index) => {
+    if (existingFrame && existingFrame.indices.has(index)) return false;
+    if (/^\s*\[HELP\]/i.test(line)) return false;
+    if (/^\s*\[\*?NOTIFICATION\]/i.test(line)) return false;
+    if (/^\s*\[INFO\]/i.test(line)) return false;
+    if (/^\s*\[PREFIX:\s*[A-Za-z0-9_-]+\]\s*$/i.test(line)) return false;
+    return true;
+  });
+  while (body.length && !body[0].trim()) body.shift();
+
+  const notificationMarker = active
+    ? '[*NOTIFICATION] Hover here for active ticket notifications.'
+    : '[NOTIFICATION] No active ticket notifications.';
+  const header = [
+    HELP_MARKER,
+    notificationMarker,
+    INFO_MARKER,
+    `[PREFIX: ${prefix}]`,
+    HEADER_SEPARATOR,
+    title,
+    HEADER_SEPARATOR
+  ];
+  if (body.length) header.push('', ...body);
+
+  let result = header.join(newline);
+  if (hadFinalNewline) result += newline;
+  return { text: result, changed: result !== text, active, prefix, title };
 }
 
 function getNotificationSidecarPath(ticketFilePath, workspaceRootPath) {
@@ -378,6 +448,8 @@ function ensureInfoMarker(text) {
 
 module.exports = {
   clampInteger,
+  formatTrackerTitle,
+  ensureTrackerHeader,
   getNotificationSidecarPath,
   leadingWidth,
   parseStructuralLine,

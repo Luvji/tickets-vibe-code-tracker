@@ -18,6 +18,7 @@ Full-line highlighting colors the ticket text by status while preserving each ta
 *   **Optional Automated Ticket Numbering**: Choose whether to use ticket IDs; when enabled, the extension generates unified, padded IDs (e.g., `[HLP-0001]`).
 *   **Rich Description & File Attachments**: Supports description lines with clickable paths and URLs to attach mockups, logs, screenshots, or code files.
 *   **AI Agent Friendly**: Includes an updated built-in system prompt to teach any AI coder how to interact with your tickets, verify tasks, and create new tickets automatically.
+*   **Protected Project Header**: Every tracker receives the same compact top block with a project-derived title, while titles edited by the user are preserved.
 *   **Epic-First Structure**: Every ticket is kept beneath an epic, with automatic spacing and configurable indentation repair.
 *   **Isolated Notifications**: Hover `[*NOTIFICATION]` to review structural or AI-reported concerns. Each tracker stores its history under `.tickets/notifications/`, with its relative path preserved to prevent notices from leaking into other ticket files.
 *   **Dedicated Ticket Support Folder**: New evidence, ticket-specific link files, attachments, notifications, and future tracker artifacts belong under `.tickets/` instead of cluttering the project root.
@@ -62,6 +63,22 @@ Ticket numbering is optional. It is enabled by default for backward compatibilit
 - **Padded Counters**: The numbering system uses a unified auto-incrementing counter with customizable padding width (default: 4 digits).
 - **Auto-Generation**: When numbering and auto-generation are enabled, typing a ticket prefix or tag appends the next sequential ID. You can still run **`Tickets: Generate Missing Ticket IDs`** manually to number a document.
 
+### Standard Project-Aware Header
+
+Every opened or edited `.tkt` and `.tickets` file is normalized to this top block:
+
+```text
+[HELP] Hover here for ticket rules and conventions.
+[NOTIFICATION] No active ticket notifications.
+[INFO] Hover here for the current ticket summary.
+[PREFIX: PRJ]
+================================================================================
+PROJECT NAME - DEVELOPMENT TRACKER
+================================================================================
+```
+
+The extension derives the initial prefix and heading from the workspace or project context. Once a framed heading exists, normalization preserves it exactly, so an AI can intelligently refine it and a user's manual title change is not overwritten. Missing, duplicated, or displaced protected markers are restored to the standard order.
+
 ### Description Lines & Clickable Attachments
 Use `[DESC]` at the start of a line to provide detail or attach files. 
 - Descriptions are automatically styled in italics with a soft slate color.
@@ -104,6 +121,10 @@ A `#-` ticket is implemented and ready to test, but not yet final. During later 
 - First activate `[*NOTIFICATION]` and record why the ticket appears stable and ready for completion in that ticket file's associated record under `.tickets/notifications/`.
 - Do not complete it during that first reminder merely because it is old.
 - If the reminder remains during a later active work session, the AI may re-run the relevant tests and inspect the current behavior. Only with fresh evidence of stability and no unresolved failures may it change `#-` to `$-`, record the verification, resolve the notification, and inform the user.
+
+### Contextual Planned-Work Reminders
+
+An AI may briefly offer relevant `*-` planned or `~-` undecided work when no substantial task is underway, when the recent conversation has consisted only of small adjustments, or when the user asks what remains. This is a contextual prompt—not a calendar timer. It must not interrupt active work or recur in every response, and it does not automatically change ticket statuses.
 
 ### Hover-Only Ticket Information
 
@@ -222,21 +243,23 @@ Please adhere to the following rules when reading, analyzing, or modifying these
    - As an AI agent, you must go through and read these referenced files or URLs when necessary to solve tasks.
    - If the referenced path is broken or unavailable, you must inform the human user and ask for the correct path.
    - If you are unable to process the data, you must seek how to process and ask human to decide to continue or not or how to proceed.
-6. If the tickets file is empty or contains ungrouped work, analyze the workspace and the existing ticket text. Intelligently group every issue and feature beneath a relevant epic, creating as many epics as needed. Never leave a ticket outside an epic.
-7. Write every epic and ticket title as a concise, accurate, professional one-line summary. Do not copy informal first-person wording such as "I want..." into a title. Preserve the user's requirements in `[DESC]` lines with grammar corrected but without changing their meaning: an epic may retain all relevant request lines, while each child ticket should retain only the lines relevant to that ticket when useful. Do not place the entire user query only under the epic when parts clearly belong to child tickets; a child `[DESC]` may be omitted when it would add no useful context.
-8. Keep every epic at indentation zero and leave at least one empty line above it. If an epic has one or more associated `[DESC]` lines, place them immediately after the epic with no intervening blank line, then leave one empty line after the final epic description. If it has no `[DESC]`, leave the empty line immediately after the epic. Indent every non-epic ticket by at least the configured ticket indentation (default 4 spaces). Indent `[DESC]` by the configured extra description indentation (default 2 spaces) relative to its owner.
-9. Maintain nested task hierarchies with deeper indentation. A tab represents one configured ticket indentation level. The `--` marker is an alternative way to express one additional child level. Preserve meaningful nesting and allow multiple sibling or deeper sub-tickets.
-10. Evaluate whether each ticket is semantically relevant to its epic and parent. If it appears misplaced, do not silently move it: change `[NOTIFICATION]` to `[*NOTIFICATION]`, append a concise active entry to that tracker's associated record under `.tickets/notifications/`, and tell the user. Hovering the marker must reveal concerns only from that associated record. After resolution, return the marker to `[NOTIFICATION]`; keep the local history record.
-11. Review long-standing `#-` Ready to Test tickets only during active development work. Never treat elapsed calendar time, file age, or a long period of project inactivity as evidence that a ticket is stable or completed.
+6. Keep the standard top block in every ticket tracker: `[HELP]`, `[NOTIFICATION]` or `[*NOTIFICATION]`, `[INFO]`, `[PREFIX: <PREFIX>]`, an `=` separator, a project-specific tracker title, and a closing `=` separator. Intelligently name the framed title from the actual project rather than copying a title from another tracker. Preserve a title the user has changed; otherwise refine a generated fallback when project context supports a more accurate name.
+7. If the tickets file is empty or contains ungrouped work, analyze the workspace and the existing ticket text. Intelligently group every issue and feature beneath a relevant epic, creating as many epics as needed. Never leave a ticket outside an epic.
+8. Write every epic and ticket title as a concise, accurate, professional one-line summary. Do not copy informal first-person wording such as "I want..." into a title. Preserve the user's requirements in `[DESC]` lines with grammar corrected but without changing their meaning: an epic may retain all relevant request lines, while each child ticket should retain only the lines relevant to that ticket when useful. Do not place the entire user query only under the epic when parts clearly belong to child tickets; a child `[DESC]` may be omitted when it would add no useful context.
+9. Keep every epic at indentation zero and leave at least one empty line above it. If an epic has one or more associated `[DESC]` lines, place them immediately after the epic with no intervening blank line, then leave one empty line after the final epic description. If it has no `[DESC]`, leave the empty line immediately after the epic. Indent every non-epic ticket by at least the configured ticket indentation (default 4 spaces). Indent `[DESC]` by the configured extra description indentation (default 2 spaces) relative to its owner.
+10. Maintain nested task hierarchies with deeper indentation. A tab represents one configured ticket indentation level. The `--` marker is an alternative way to express one additional child level. Preserve meaningful nesting and allow multiple sibling or deeper sub-tickets.
+11. Evaluate whether each ticket is semantically relevant to its epic and parent. If it appears misplaced, do not silently move it: change `[NOTIFICATION]` to `[*NOTIFICATION]`, append a concise active entry to that tracker's associated record under `.tickets/notifications/`, and tell the user. Hovering the marker must reveal concerns only from that associated record. After resolution, return the marker to `[NOTIFICATION]`; keep the local history record.
+12. Review long-standing `#-` Ready to Test tickets only during active development work. Never treat elapsed calendar time, file age, or a long period of project inactivity as evidence that a ticket is stable or completed.
    a. When later project activity and current evidence suggest that a `#-` ticket is working correctly but was never marked complete, first activate `[*NOTIFICATION]`, append the reason and evidence to that tracker's associated record under `.tickets/notifications/`, and ask the user to review promotion to `$-`.
    b. Do not change the ticket to `$-` during that first reminder merely because it appears old.
    c. If the reminder is still present in a later active work session, re-run the relevant tests and inspect the current behavior. If fresh evidence shows that the implementation is stable and there are no unresolved failures or blockers, you may change it to `$-`, record the verification and resolution in the same associated sidecar, and inform the user. Otherwise, keep it at `#-` or use `^-` when testing fails.
-12. Notification records are local and file-specific. Mirror the tracker path below `.tickets/notifications/`: `name.tkt` uses `.tickets/notifications/name.tkt.notification`, and `planning/name.tickets` uses `.tickets/notifications/planning/name.tickets.notification`. Never read or write another tracker's notification record for the current marker. Ensure `.tickets/notifications/` is listed in `.gitignore`, and do not commit these generated records.
-13. Use `[LINK] [<PREFIX>-<NUMBER>][<PREFIX>-<NUMBER>]` to refer to one or more tickets in the same ticket file or another accessible workspace ticket file. Verify every referenced ID independently and report each unresolved reference.
-14. A `[TEST]` ticket identifies a test or test case rather than development work. Every `[TEST]` must have a child `[LINK]` referencing the ticket it verifies. If no valid target is known, retain the extension-provided `[LINK]{nil}` placeholder until a valid ID is supplied.
-15. Keep `[INFO]` as a compact marker only. Do not write generated status totals or epic reports into the ticket file; the extension calculates and displays those details on hover.
-16. Store newly created ticket-specific evidence images, recordings, logs, link/reference files, attachments, and future support artifacts under `.tickets/evidence/<ticket-id>/`, `.tickets/links/<ticket-id>/`, `.tickets/attachments/<ticket-id>/`, or `.tickets/files/<ticket-id>/`. When numbering is disabled, use a stable ticket slug. Do not move ordinary source code, project documentation, or assets solely because a ticket references them.
-17. Keep the 'README.md' and the '.tickets' files updated as features are built.
+13. Notification records are local and file-specific. Mirror the tracker path below `.tickets/notifications/`: `name.tkt` uses `.tickets/notifications/name.tkt.notification`, and `planning/name.tickets` uses `.tickets/notifications/planning/name.tickets.notification`. Never read or write another tracker's notification record for the current marker. Ensure `.tickets/notifications/` is listed in `.gitignore`, and do not commit these generated records.
+14. Use `[LINK] [<PREFIX>-<NUMBER>][<PREFIX>-<NUMBER>]` to refer to one or more tickets in the same ticket file or another accessible workspace ticket file. Verify every referenced ID independently and report each unresolved reference.
+15. A `[TEST]` ticket identifies a test or test case rather than development work. Every `[TEST]` must have a child `[LINK]` referencing the ticket it verifies. If no valid target is known, retain the extension-provided `[LINK]{nil}` placeholder until a valid ID is supplied.
+16. Keep `[INFO]` as a compact marker only. Do not write generated status totals or epic reports into the ticket file; the extension calculates and displays those details on hover.
+17. Store newly created ticket-specific evidence images, recordings, logs, link/reference files, attachments, and future support artifacts under `.tickets/evidence/<ticket-id>/`, `.tickets/links/<ticket-id>/`, `.tickets/attachments/<ticket-id>/`, or `.tickets/files/<ticket-id>/`. When numbering is disabled, use a stable ticket slug. Do not move ordinary source code, project documentation, or assets solely because a ticket references them.
+18. When no substantial work is currently underway, briefly remind the user of relevant `*-` planned-for-later or `~-` undecided tickets and ask whether they want to take one up. Appropriate moments include when the recent two or three requests have involved only slight adjustments, or when the user asks what is pending or what should be done next. Do not interrupt active work, do not infer this from elapsed calendar time, and do not repeat the reminder in every response or again without a meaningful change in context.
+19. Keep the 'README.md' and the '.tickets' files updated as features are built.
 ```
 
 ---

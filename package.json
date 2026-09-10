@@ -2,7 +2,7 @@
   "name": "tickets-vibe-coding",
   "displayName": "Tickets - vibe coding issue tracker & management",
   "description": "A text based Ticket tracking system. Custom color highlighter for project tickets and bugtracker files (.tickets, .tkt). Supports custom settings and provides prompts for AI agents.",
-  "version": "1.2.11",
+  "version": "2.2.0",
   "publisher": "Luvji",
   "icon": "bug.png",
   "repository": {
@@ -21,6 +21,9 @@
     "*"
   ],
   "main": "./extension.js",
+  "scripts": {
+    "test": "node test.js"
+  },
   "contributes": {
     "languages": [
       {
@@ -48,18 +51,37 @@
       "properties": {
         "agentTicketHighlighter.projectPrefix": {
           "type": "string",
-          "default": "HLP",
-          "description": "Default project prefix for ticket numbering (e.g., HLP)."
+          "default": "",
+          "description": "Optional project prefix override. When empty, a prefix is generated from the project name or project idea."
         },
         "agentTicketHighlighter.idPadding": {
           "type": "integer",
           "default": 4,
           "description": "Number of padding digits for ticket IDs (e.g., 4 for 0001)."
         },
+        "agentTicketHighlighter.enableTicketNumbering": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable ticket numbering. Disable this to keep ticket lines unnumbered."
+        },
         "agentTicketHighlighter.autoGenerateIds": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically generate and append unique ticket IDs when typing new tickets."
+          "description": "Automatically generate and append unique ticket IDs when ticket numbering is enabled."
+        },
+        "agentTicketHighlighter.ticketIndentation": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 1,
+          "maximum": 16,
+          "description": "Spaces per ticket hierarchy level. Every non-epic ticket is restored to at least this indentation."
+        },
+        "agentTicketHighlighter.descriptionIndentation": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 16,
+          "description": "Extra spaces used for a [DESC] line relative to its owning epic or ticket."
         },
         "agentTicketHighlighter.highlightFullLine": {
           "type": "boolean",

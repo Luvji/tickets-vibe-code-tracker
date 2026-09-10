@@ -1,0 +1,11 @@
+.git/**
+.gitignore
+development.tkt
+tickets.notification
+.tickets/**
+*.tkt.notification
+*.tickets.notification
+*.tkt
+*.vsix
+*.tgz
+test.js

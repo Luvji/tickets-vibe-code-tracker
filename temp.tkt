@@ -1,0 +1,15 @@
+[HELP] Hover here for ticket rules and conventions.
+[PREFIX: HLP]
+
+$- [FT][HLP-0001] Completed parent feature
+  -- [SUB][HLP-0002] First sub-ticket
+  @- -- [SUB][HLP-0003] Active sub-ticket
+
+#- [TEST][HLP-0004] Verify the completed feature
+  [LINK][HLP-0001]
+
+#- [TEST][HLP-0005] Unknown number
+  [LINK][HLP-9999]
+
+#- [TEST][HLP-0006] Unknown prefix
+  [LINK][XYZ-0001]

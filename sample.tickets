@@ -1,10 +1,11 @@
+[HELP] Hover here for ticket rules and conventions.
 [PREFIX: HLP]
 ================================================================================
 TICKETS - BUG & SUGGESTION TRACKER (SAMPLE FILE)
 ================================================================================
 This is a sample file demonstrating the syntax highlighting and features.
 Save your project task lists with the '.tickets' or '.tkt' extension to activate.
-
+===============================================================================
 RULES & CONVENTIONS:
 --------------------------------------------------------------------------------
 Prefixes (Start of line triggers):
@@ -21,11 +22,21 @@ Tags (Inline badges):
   [FT] or [F]    : New features
   [ENH] or [E]   : Improvements/enhancements
   [EPIC] or [EP] : Large milestones
+  [SUB]           : Direct sub-ticket; requires -- and a [FT], [BUG], or [ENH] parent
+  [TEST]          : Test case; requires a child [LINK]
+  [LINK]          : One or more workspace ticket references
 
 Description (Italics):
   [DESC] *Use description lines for additional details and file paths/attachments.*
-================================================================================
 
+Comments:
+  // single line comment - can be added at the end of the ticket lines.
+  /* multiline comment
+    can be on multiple line
+    to add large comments
+  */
+================================================================================
+Examples -
 ~- [EPIC][HLP-0001] Phase 1: Authentication & Layout
   [DESC] *Core auth modules. Design document: docs/auth_design.md*
   $- [FT][HLP-0002] Initial user registration and password hashing // Complete
@@ -38,9 +49,18 @@ Description (Italics):
 
 ~- [EPIC][HLP-0007] Phase 2: Billing & Subscriptions
   *- [FT][HLP-0008] Integrate Stripe payment gateway
+    -- [SUB][HLP-0011] Add saved payment-method selector
   *- [ENH][HLP-0009] Add support for recurring monthly subscriptions // Backlog item
 
 !- [FT][HLP-0010] Legacy XML data parser migration // Cancelled (switching entirely to JSON APIs)
+
+@- [FT][HLP-0012] Add account recovery workflow
+  -- [SUB][HLP-0013] Create the recovery request form
+  $- -- [SUB][HLP-0014] Add expiring recovery tokens // Completed sub-ticket
+  #- [TEST][HLP-0015] Verify successful account recovery
+    [LINK] [HLP-0012][HLP-0014][HLP-0009]
+  *- [TEST][HLP-0016] Verify recovery for an unknown account
+    [LINK]{nil}
 
 /*
   Block comments like this are fully supported.
